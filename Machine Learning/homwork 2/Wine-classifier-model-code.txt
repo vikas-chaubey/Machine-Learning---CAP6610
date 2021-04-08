@@ -1,0 +1,174 @@
+# Import packages.
+import cvxpy as cp
+import numpy as np
+import os
+
+def mean_absolute_error(actual_value: np.ndarray, predicted_value: np.ndarray):
+    return np.mean(np.abs(actual_value-predicted_value))
+
+
+def least_squares_model_prediction(test_input_data: np.ndarray,weights:np.ndarray, beta:np.ndarray):
+    return test_input_data@weights + beta
+
+def huberLoss_model_prediction(test_input_data: np.ndarray,weights:np.ndarray, beta:np.ndarray):
+    return test_input_data@weights + beta
+
+
+def hingeLoss_model_prediction(test_input_data: np.ndarray,weights:np.ndarray, beta:np.ndarray):
+    return test_input_data@weights + beta
+
+
+path = os.path.split('/users/vikas/Documents/winequality/winequality-red.csv')[0]
+print('check if path data file path is correct and exists :', os.path.exists(path))
+
+import pandas as pd
+df=pd.read_csv('/users/vikas/Documents/winequality/winequality-red.csv',skiprows=1, sep=';',usecols=[0,1,2,3,4,5,6,7,8,9,10,11],header=None)
+df = df.astype(float)
+data=df.values.tolist()
+raw_Csv_Data=np.array(data)
+x_train= np.array(raw_Csv_Data)
+x_train=x_train[0:1400,0:11]
+#print("x_train data is +",x_train)
+y_train= np.array(raw_Csv_Data)
+y_train=y_train[0:1400,11:]
+#print("y_train data is +",y_train)
+#print("size of x_train,y_train",x_train.shape,y_train.shape)
+
+x_test= np.array(raw_Csv_Data)
+x_test=x_test[1400:,0:11]
+#print("x_test data is +",x_test)
+y_test= np.array(raw_Csv_Data)
+y_test=y_test[1400:,11:]
+#print("y_test data is +",y_test)
+#print("size of x_test,y_test",x_test.shape,y_test.shape)
+
+
+
+# Defining and solving the least squares problem .
+# basis function (quadratic functions)1,x2,2x2,3x2,4x2,5x2,6x2,7x2,8x2,9x2,10x2,11x2 -- >for 11 features
+# the reason behind choosing quadratic function as basis function is that it gives good accuracy without overfitting the model
+# which ususally happens with higher order power polynomials
+# forming the phi matriox by applying basis function to the input vectors
+phi_train_raw=x_train[0:1400,0:11]
+print(phi_train_raw)
+
+phi_train=np.empty((1,11), dtype=float)
+nrows = phi_train_raw.shape
+for i in range(nrows[0]):
+    row = phi_train_raw[i, :]  
+    #row=[1,2,3]
+    # print(row)
+    a=float(1)
+    #print("a is : ",a)
+    b=np.sum((np.square(row))*2,dtype = np.float32)
+    #print("b is : ",b)
+    c=np.sum((np.square(row))*3,dtype = np.float32)
+    #print("c is : ",c)
+    d=np.sum((np.square(row))*4,dtype = np.float32)
+    #print("d is : ",d)
+    e=np.sum((np.square(row))*5,dtype = np.float32)
+    f=np.sum((np.square(row))*6,dtype = np.float32)
+    g=np.sum((np.square(row))*7,dtype = np.float32)
+    h=np.sum((np.square(row))*8,dtype = np.float32)
+    i=np.sum((np.square(row))*9,dtype = np.float32)
+    j=np.sum((np.square(row))*10,dtype = np.float32)
+    k=np.sum((np.square(row))*11,dtype = np.float32)
+    newrow = [a,b,c,d,e,f,g,h,i,j,k]
+    phi_train = np.vstack([phi_train, newrow])
+    
+
+phi_train = phi_train[1:,0:]
+print(phi_train.shape)
+
+#print("phi_train.shape is = " , phi_train.shape)
+#calculation of pseudo inverse of matrox phi_train
+pseudo_inverse= np.linalg.pinv(phi_train)
+#calculation of theta - parameter values by multiplying it with pseudo inverse
+theta_vector=np.matmul(pseudo_inverse,y_train)
+print("theta_vector for least squares model using Phi Matrix is = ",theta_vector)
+
+
+phi_test_raw=x_test[0:,0:11]
+print(phi_test_raw.shape)
+
+phi_test=np.empty((1,11), dtype=float)
+nrows = phi_test_raw.shape
+for i in range(nrows[0]):
+    row = phi_test_raw[i, :]  
+    #row=[1,2,3]
+    # print(row)
+    a=float(1)
+    #print("a is : ",a)
+    b=np.sum((np.square(row))*2,dtype = np.float32)
+    #print("b is : ",b)
+    c=np.sum((np.square(row))*3,dtype = np.float32)
+    #print("c is : ",c)
+    d=np.sum((np.square(row))*4,dtype = np.float32)
+    #print("d is : ",d)
+    e=np.sum((np.square(row))*5,dtype = np.float32)
+    f=np.sum((np.square(row))*6,dtype = np.float32)
+    g=np.sum((np.square(row))*7,dtype = np.float32)
+    h=np.sum((np.square(row))*8,dtype = np.float32)
+    i=np.sum((np.square(row))*9,dtype = np.float32)
+    j=np.sum((np.square(row))*10,dtype = np.float32)
+    k=np.sum((np.square(row))*11,dtype = np.float32)
+    newrow = [a,b,c,d,e,f,g,h,i,j,k]
+    phi_test = np.vstack([phi_test, newrow])
+    
+
+phi_test = phi_test[1:,0:]
+#print("phi_test.shape is = ",phi_test.shape)
+predicted_results= np.matmul(phi_test,theta_vector)
+print("predicted_results for least squares model using Phi Matrix is = ",predicted_results)
+Mean_Absolute_Error_Least_Squares = mean_absolute_error(y_test,predicted_results)
+print("mean_absolute_error_value for least squares model using Phi Matrix is  = ",Mean_Absolute_Error_Least_Squares)
+
+
+
+w,b = cp.Variable((11,1)),cp.Variable(1)
+x,y = cp.Parameter(), cp.Parameter()
+x=x_train
+y=y_train
+
+# Defining and solving the least squares problem .
+loss = cp.sum_squares( x@w + b - y)
+prob = cp.Problem(cp.Minimize(loss))
+prob.solve()
+print("The optimal w for least squares model using CVX package is = ",w.value)
+print("The optimal b for least squares model using CVX package is = ",b.value)
+predicted_value1=least_squares_model_prediction(x_test,w.value,b.value)
+Mean_Absolute_Error_Least_Squares = mean_absolute_error(y_test,predicted_value1)
+print("mean_absolute_error_LeastSquares for least squares model using CVX package is   = ",Mean_Absolute_Error_Least_Squares)
+
+w,b = cp.Variable((11,1)),cp.Variable(1)
+x,y = cp.Parameter(), cp.Parameter()
+x=x_train
+y=y_train
+
+# Defining and solving the Huber Loss problem .
+loss=cp.sum(cp.huber( (x@w + b - y),1))
+prob1=cp.Problem(cp.Minimize(loss))
+prob1.solve()
+print("The optimal w for Huber Loss  model using CVX package is = ",w.value)
+print("The optimal b for Huber Loss  model using CVX package is = ",b.value)
+predicted_value2=huberLoss_model_prediction(x_test,w.value,b.value)
+Mean_Absolute_Error_huberLoss = mean_absolute_error(y_test,predicted_value2)
+print("Mean_Absolute_Error_HuberLoss for for Huber Loss  model using CVX package is  = ",Mean_Absolute_Error_huberLoss)
+
+
+w,b = cp.Variable((11,1)),cp.Variable(1)
+x,y = cp.Parameter(), cp.Parameter()
+x=x_train
+y=y_train
+
+
+# Defining and solving the Hinge Loss problem .
+cost=cp.abs((x@w)+b-y)
+cost=(cp.maximum(cost-0.5,0))
+prob = cp.Problem(cp.Minimize(cp.sum(cost))).solve(solver=cp.ECOS)
+print("The optimal w for Hinge Loss model using CVX package is = ",w.value)
+print("The optimal b for Hinge Loss model using CVX package is = ",b.value)
+predicted_value3=hingeLoss_model_prediction(x_test,w.value,b.value)
+Mean_Absolute_Error_hingeLoss = mean_absolute_error(y_test,predicted_value3)
+print("Mean_Absolute_Error_hingeLoss for Hinge Loss model using CVX package is  = ",Mean_Absolute_Error_hingeLoss)
+

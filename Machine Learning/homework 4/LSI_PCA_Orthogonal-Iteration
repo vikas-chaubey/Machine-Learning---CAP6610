@@ -1,0 +1,38 @@
+from sklearn.datasets import fetch_20newsgroups_vectorized
+from scipy.sparse import csr_matrix
+import numpy as np
+import matplotlib.pyplot as plot
+import pandas as pd
+
+#obtaining training data from the 20newsgroup dataset
+newsgroups_DataSet_Training = fetch_20newsgroups_vectorized(subset='train')
+
+#obtaining the sparse matrix from training data and transposing it
+sparseMatrix_Data = newsgroups_DataSet_Training.data.T
+
+#obtaining training set actual results
+trainingSet_Outcomes = newsgroups_DataSet_Training.target
+
+#Initializing projection matrix with random values taking k=2.
+projection_Matrix_Theta = np.random.rand(130107,2)
+
+#Declaring temp variable to hold previous projection matrix, initializing it with random values
+previous_projection_Matrix = np.random.rand(130107,2)
+
+#starting while loop and conituning iterations untill previous and current projection matrix are same
+while((previous_projection_Matrix != projection_Matrix_Theta).all()):
+	#obtaing sparse matrix from project Matrix and multiply it with newsgroup data
+    matrix_var = sparseMatrix_Data.T * csr_matrix(projection_Matrix_Theta)
+    #saving current project matrix for comparison at loop condition check
+    previous_projection_Matrix = projection_Matrix_Theta
+    #obtaining new matrix_var by multiplying newsgroupdata with its current value
+    matrix_var = sparseMatrix_Data * matrix_var
+    #obtaining QR factorization of obtained matrix_var , here projection_Matrix_Theta = Q (matrix with orthonormal columns) , rFactor = R (The upper-triangular matrix)
+    projection_Matrix_Theta, rFactor = np.linalg.qr(matrix_var.toarray())
+
+#performing matrix multiplication of projection matrix with newgroup data
+Y_Outcome = np.matmul(projection_Matrix_Theta.T, sparseMatrix_Data.todense())
+
+#Plotting the scatter garph
+plot.scatter((Y_Outcome[0].tolist()[0]), (Y_Outcome[1].tolist()[0]), c=trainingSet_Outcomes)
+plot.show()
